@@ -20,6 +20,7 @@ try:
     FW_VERSION = firewall.config.VERSION
 
     from firewall.client import FirewallClient
+    from firewall.client import FirewallClientDirect
     from firewall.client import FirewallClientZoneSettings
     from firewall.errors import FirewallError
     import_failure = False
@@ -124,6 +125,21 @@ class FirewallTransaction(object):
                 )
             else:
                 self.module.fail_json(msg='ERROR: Exception caught: %s' % e)
+
+    def get_direct_settings(self):
+        if self.fw_offline:
+            fw_direct = self.fw.config.get_direct()
+            fw_settings = FirewallClientDirect(settings=fw_direct.export_config())
+        else:
+            fw_direct = self.fw.config().direct()
+            fw_settings = fw_direct.getSettings()
+        return (fw_direct, fw_settings)
+
+    def update_direct_settings(self, fw, fw_settings):
+        if self.fw_offline:
+            fw.import_config(fw_settings.settings)
+        else:
+            fw.update(fw_settings)
 
     def get_fw_zone_settings(self):
         if self.fw_offline:
